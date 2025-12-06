@@ -25,7 +25,7 @@ namespace TFAlgoritmos {
                 imagen = gcnew Bitmap(ruta);
             }
             catch (...) {
-                // bitmap vacío de emergencia por si falla la ruta
+                
                 imagen = gcnew Bitmap(50, 50);
             }
         }

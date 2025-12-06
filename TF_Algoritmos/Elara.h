@@ -2,46 +2,77 @@
 #include "Entidad.h"
 #include <vector>
 using namespace System::Collections::Generic;
+using namespace System::Drawing;
 
 namespace TFAlgoritmos {
     public ref class Elara : public Entidad {
     public:
         Elara(int x, int y) : Entidad(x, y, "imagenes/elara.png") {
-            // Cálculo automático de tamaño (Igual que Kael)
-            ancho = imagen->Width / 8;  // 32 px
-            alto = imagen->Height / 4;  // 52 px approx
-            dx = 8;
-            dy = 8;
+            
+            ancho = imagen->Width / 8;
+            alto = imagen->Height / 4;
+            dx = 12;
+            dy = 12;
         }
 
-        void Mover(bool w, bool s, bool a, bool d, int limiteW, int limiteH, List<Rectangle>^ obstaculos) {
+        void Mover(bool w, bool s, bool a, bool d, int limiteMapaW, int limiteMapaH, List<Rectangle>^ obstaculos) {
             int futuroX = x;
             int futuroY = y;
             bool seMueve = false;
 
-            // Direcciones (Ajustadas a tu sprite sheet: 0=Abajo, 1=Izq, 2=Der, 3=Arr)
             if (a) { futuroX -= dx; indiceY = 3; seMueve = true; }
             if (d) { futuroX += dx; indiceY = 1; seMueve = true; }
             if (w) { futuroY -= dy; indiceY = 2; seMueve = true; }
             if (s) { futuroY += dy; indiceY = 0; seMueve = true; }
 
-            // Límites de pantalla
-            if (futuroX < 0 || futuroX + ancho > limiteW || futuroY < 0 || futuroY + alto > limiteH) return;
+            
+            if (futuroX < 0 || futuroX + ancho > limiteMapaW || futuroY < 0 || futuroY + alto > limiteMapaH) return;
 
-            // Colisión con paredes (Estantes)
-            Rectangle futuroRect = Rectangle(futuroX, futuroY, ancho, alto);
+          
+
+            int hitAncho = ancho / 2;       
+            int hitAlto = alto / 3;         
+            int hitX = futuroX + (ancho / 4); 
+            int hitY = futuroY + (alto - hitAlto);
+
+            Rectangle futuroHitbox = Rectangle(hitX, hitY, hitAncho, hitAlto);
+
+            
             for (int i = 0; i < obstaculos->Count; i++) {
-                if (futuroRect.IntersectsWith(obstaculos[i])) return;
+                if (futuroHitbox.IntersectsWith(obstaculos[i])) return;
             }
 
+            
             x = futuroX;
             y = futuroY;
 
-            // Animación
             if (seMueve) {
                 indiceX++;
                 if (indiceX > 7) indiceX = 0;
             }
+        }
+
+        
+        Rectangle GetHitbox() {
+            int hitAncho = ancho / 2;
+            int hitAlto = alto / 3;
+            int hitX = x + (ancho / 4);
+            int hitY = y + (alto - hitAlto);
+
+            return Rectangle(hitX, hitY, hitAncho, hitAlto);
+        }
+
+        
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            int anchoFrame = imagen->Width / 8;
+            int altoFrame = imagen->Height / 4;
+            Rectangle porcion = Rectangle(indiceX * anchoFrame, indiceY * altoFrame, anchoFrame, altoFrame);
+            Rectangle destino = Rectangle(x - camX, y - camY, ancho, alto);
+
+            g->InterpolationMode = System::Drawing::Drawing2D::InterpolationMode::NearestNeighbor;
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+
+            
         }
     };
 }

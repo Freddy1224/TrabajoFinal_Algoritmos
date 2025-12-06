@@ -1,0 +1,2047 @@
+Controladora.h:
+
+#pragma once
+#include "Escenario.h"
+#include "Kael.h"
+#include "Terminal.h"
+#include <vector>
+
+using namespace System;
+using namespace System::Collections::Generic;
+using namespace System::Drawing;
+
+namespace TFAlgoritmos {
+    public ref class Controladora {
+    private:
+        Escenario^ escenario;
+        Kael^ kael;
+        List<Terminal^>^ terminales;
+        List<Rectangle>^ obstaculos;
+        Rectangle areaSupervisor;
+
+        // Variables de Camara
+        int camX, camY;
+
+    public:
+        Controladora() {
+            escenario = gcnew Escenario();
+            
+            kael = gcnew Kael(1200, 1200);
+            terminales = gcnew List<Terminal^>();
+            obstaculos = gcnew List<Rectangle>();
+
+            
+            areaSupervisor = Rectangle(980, 980, 100, 100);
+
+          
+
+            obstaculos->Add(Rectangle(1012, 1012, 40, 40)); 
+
+            // Bordes
+            obstaculos->Add(Rectangle(0, 0, 1600, 120));
+            obstaculos->Add(Rectangle(0, 0, 50, 1600));
+            obstaculos->Add(Rectangle(1554, 46, 100, 1600));
+            obstaculos->Add(Rectangle(0, 1500, 1600, 100));
+
+            // Zonas internas 
+            obstaculos->Add(Rectangle(350, 30, 330, 310));
+            obstaculos->Add(Rectangle(580, 30, 330, 220));
+
+            obstaculos->Add(Rectangle(916, 100, 24, 300));
+            obstaculos->Add(Rectangle(1042, 100, 24, 140));
+            obstaculos->Add(Rectangle(1236, 100, 24, 140));
+            obstaculos->Add(Rectangle(1428, 100, 24, 140));
+
+            obstaculos->Add(Rectangle(1508, 410, 46, 160));
+            obstaculos->Add(Rectangle(1360, 540, 20, 20));
+            obstaculos->Add(Rectangle(1108, 488, 154, 80));
+
+            obstaculos->Add(Rectangle(50, 1240, 830, 360)); 
+
+            obstaculos->Add(Rectangle(788, 600, 800, 420)); 
+            obstaculos->Add(Rectangle(788, 540, 150, 100));
+
+            obstaculos->Add(Rectangle(150, 914, 154, 60));
+            obstaculos->Add(Rectangle(470, 580, 154, 60));
+            obstaculos->Add(Rectangle(1500, 1100, 46, 400));
+
+            // --- TERMINALES (x2) ---
+            terminales->Add(gcnew Terminal(200, 120, 1));
+            terminales->Add(gcnew Terminal(750, 240, 2));
+            terminales->Add(gcnew Terminal(1032, 220, 3));
+            terminales->Add(gcnew Terminal(1418, 220, 4));
+            terminales->Add(gcnew Terminal(820, 1000, 5));
+        }
+
+        void MoverTodo(bool w, bool s, bool a, bool d) {
+            escenario->Animar();
+            
+            kael->Mover(w, s, a, d, 1600, 1600, obstaculos);
+
+            
+            camX = kael->GetX() - 400 + (kael->GetRectangulo().Width / 2);
+            camY = kael->GetY() - 400 + (kael->GetRectangulo().Height / 2);
+
+            // Clamping limites camaraaaaaaa
+            if (camX < 0) camX = 0;
+            if (camY < 0) camY = 0;
+            if (camX > 1600 - 800) camX = 800;
+            if (camY > 1600 - 800) camY = 800;
+        }
+
+        void DibujarTodo(Graphics^ g) {
+            escenario->Dibujar(g, camX, camY); 
+
+            for (int i = 0; i < terminales->Count; i++) {
+                terminales[i]->Dibujar(g, camX, camY); 
+            }
+
+            kael->Dibujar(g, camX, camY); 
+
+           
+        }
+
+        int VerificarColisionNivel1() {
+            for (int i = 0; i < terminales->Count; i++) {
+                if (terminales[i]->activa) {
+                    if (kael->GetRectangulo().IntersectsWith(terminales[i]->GetRectangulo())) {
+                        return terminales[i]->id;
+                    }
+                }
+            }
+            return 0;
+        }
+
+        bool VerificarColisionSupervisor() {
+            return kael->GetRectangulo().IntersectsWith(areaSupervisor);
+        }
+
+        void ResolverInteraccion(int id) {
+            kael->AumentarVoluntad();
+            for (int i = 0; i < terminales->Count; i++) {
+                if (terminales[i]->id == id) {
+                    terminales[i]->Desactivar();
+                    break;
+                }
+            }
+        }
+
+        int GetVoluntadKael() { return kael->GetVoluntad(); }
+
+       
+        int GetCamX() { return camX; }
+        int GetCamY() { return camY; }
+    };
+}
+
+ControladoraNivel2.h:
+
+#pragma once
+#include "Escenario2.h"
+#include "Elara.h"
+#include "Sombra.h"
+#include "Fragmento.h" 
+#include <vector>
+
+using namespace System;
+using namespace System::Collections::Generic;
+using namespace System::Drawing;
+
+namespace TFAlgoritmos {
+    public ref class ControladoraNivel2 {
+    private:
+        Escenario2^ escenario;
+        Elara^ elara;
+        List<Rectangle>^ obstaculos;
+        List<Sombra^>^ sombras;
+        List<Fragmento^>^ fragmentos;
+        int fragmentosRecogidos;
+
+        
+        int camX, camY;
+
+    public:
+        ControladoraNivel2() {
+            escenario = gcnew Escenario2();
+            elara = gcnew Elara(420, 1410);
+            obstaculos = gcnew List<Rectangle>();
+            sombras = gcnew List<Sombra^>();
+            fragmentos = gcnew List<Fragmento^>(); 
+            fragmentosRecogidos = 0;
+
+            
+            obstaculos->Add(Rectangle(0, 0, 1600, 100));    // Techo
+            obstaculos->Add(Rectangle(0, 1500, 1600, 100)); // Suelo
+            obstaculos->Add(Rectangle(0, 0, 61, 254));    // Izquierda
+            obstaculos->Add(Rectangle(0, 468, 61, 940));
+
+            obstaculos->Add(Rectangle(1500, 0, 100, 1600)); // Derecha
+            obstaculos->Add(Rectangle(0, 1500, 1600, 100));
+            obstaculos->Add(Rectangle(60, 100, 400, 145));
+            obstaculos->Add(Rectangle(62, 572, 50, 550));
+
+            obstaculos->Add(Rectangle(321, 30, 380, 350));
+            obstaculos->Add(Rectangle(580, 30, 330, 220));
+            obstaculos->Add(Rectangle(916, 100, 24, 300));
+            obstaculos->Add(Rectangle(960, 100, 700, 120));
+            obstaculos->Add(Rectangle(1508, 410, 46, 160));
+            obstaculos->Add(Rectangle(1108, 488, 154, 80));
+            obstaculos->Add(Rectangle(1108, 1240, 200, 70));
+            obstaculos->Add(Rectangle(50, 1240, 266, 166));
+            obstaculos->Add(Rectangle(832, 1241, 60, 266));
+            obstaculos->Add(Rectangle(579, 1242, 314, 165));
+            obstaculos->Add(Rectangle(788, 600, 800, 420));
+            obstaculos->Add(Rectangle(788, 540, 150, 100));
+            obstaculos->Add(Rectangle(385, 572, 400, 510));
+            obstaculos->Add(Rectangle(1500, 1100, 46, 400));
+
+            //SOMBRAs
+            sombras->Add(gcnew Sombra(210, 1010));
+            sombras->Add(gcnew Sombra(1200, 1140));
+            sombras->Add(gcnew Sombra(400, 500));
+            sombras->Add(gcnew Sombra(940, 300));
+            sombras->Add(gcnew Sombra(666, 1400));
+            sombras->Add(gcnew Sombra(300, 1200));
+
+            //libros
+            
+            fragmentos->Add(gcnew Fragmento(1400, 200, 1));  
+            fragmentos->Add(gcnew Fragmento(200, 1400, 2));  
+            fragmentos->Add(gcnew Fragmento(775, 293, 3));   
+            fragmentos->Add(gcnew Fragmento(1400, 1400, 4)); 
+            fragmentos->Add(gcnew Fragmento(200, 200, 5));   
+        }
+
+        void MoverTodo(bool w, bool s, bool a, bool d) {
+            escenario->Animar();
+            elara->Mover(w, s, a, d, 1600, 1600, obstaculos);
+
+            
+            camX = elara->GetX() - 400 + (elara->GetRectangulo().Width / 2);
+            camY = elara->GetY() - 400 + (elara->GetRectangulo().Height / 2);
+            if (camX < 0) camX = 0; if (camY < 0) camY = 0;
+            if (camX > 1600 - 800) camX = 800; if (camY > 1600 - 800) camY = 800;
+
+            // Mover Sombras
+            for (int i = 0; i < sombras->Count; i++) {
+                sombras[i]->Perseguir(elara->GetX(), elara->GetY(), obstaculos, elara->GetHitbox());
+            }
+
+            
+            for (int i = 0; i < fragmentos->Count; i++) {
+                if (fragmentos[i]->activo) {
+                    fragmentos[i]->Animar();
+                }
+            }
+
+            VerificarColisiones();
+        }
+
+        
+        int VerificarColisiones() {
+            Rectangle rElara = elara->GetHitbox();
+
+            
+            for (int i = 0; i < sombras->Count; i++) {
+                if (rElara.IntersectsWith(sombras[i]->GetHitbox())) {
+                    elara = gcnew Elara(420, 1410);
+                    return -1; 
+                }
+            }
+
+            
+            for (int i = 0; i < fragmentos->Count; i++) {
+                if (fragmentos[i]->activo) {
+                    if (rElara.IntersectsWith(fragmentos[i]->GetRectangulo())) {
+                        
+                        return fragmentos[i]->id;
+                    }
+                }
+            }
+
+            return 0;
+        }
+
+        
+        void RecogerFragmento(int id) {
+            for (int i = 0; i < fragmentos->Count; i++) {
+                if (fragmentos[i]->id == id) {
+                    fragmentos[i]->Desactivar();
+                    fragmentosRecogidos++;
+                    break;
+                }
+            }
+        }
+
+        bool NivelCompletado() {
+            return fragmentosRecogidos >= 5;
+        }
+
+        void DibujarTodo(Graphics^ g) {
+            escenario->Dibujar(g, camX, camY);
+
+            // Dibujar libros
+            for (int i = 0; i < fragmentos->Count; i++) {
+                fragmentos[i]->Dibujar(g, camX, camY);
+            }
+
+            // Dibujar Sombras
+            for (int i = 0; i < sombras->Count; i++) {
+                sombras[i]->Dibujar(g, camX, camY);
+            }
+
+            elara->Dibujar(g, camX, camY);
+            Pen^ p = gcnew Pen(Color::Red, 2);
+            for (int i = 0; i < obstaculos->Count; i++) {
+                // para dibujar las paredes correctamente, restamos la camara
+                Rectangle r = obstaculos[i];
+                r.X -= camX;
+                r.Y -= camY;
+                g->DrawRectangle(p, r);
+            }
+        }
+        int GetCamX() { return camX; }
+        int GetCamY() { return camY; }
+    };
+}
+
+Elara.h
+
+#pragma once
+#include "Entidad.h"
+#include <vector>
+using namespace System::Collections::Generic;
+using namespace System::Drawing;
+
+namespace TFAlgoritmos {
+    public ref class Elara : public Entidad {
+    public:
+        Elara(int x, int y) : Entidad(x, y, "imagenes/elara.png") {
+            
+            ancho = imagen->Width / 8;
+            alto = imagen->Height / 4;
+            dx = 12;
+            dy = 12;
+        }
+
+        void Mover(bool w, bool s, bool a, bool d, int limiteMapaW, int limiteMapaH, List<Rectangle>^ obstaculos) {
+            int futuroX = x;
+            int futuroY = y;
+            bool seMueve = false;
+
+            if (a) { futuroX -= dx; indiceY = 3; seMueve = true; }
+            if (d) { futuroX += dx; indiceY = 1; seMueve = true; }
+            if (w) { futuroY -= dy; indiceY = 2; seMueve = true; }
+            if (s) { futuroY += dy; indiceY = 0; seMueve = true; }
+
+            
+            if (futuroX < 0 || futuroX + ancho > limiteMapaW || futuroY < 0 || futuroY + alto > limiteMapaH) return;
+
+          
+
+            int hitAncho = ancho / 2;       
+            int hitAlto = alto / 3;         
+            int hitX = futuroX + (ancho / 4); 
+            int hitY = futuroY + (alto - hitAlto);
+
+            Rectangle futuroHitbox = Rectangle(hitX, hitY, hitAncho, hitAlto);
+
+            
+            for (int i = 0; i < obstaculos->Count; i++) {
+                if (futuroHitbox.IntersectsWith(obstaculos[i])) return;
+            }
+
+            
+            x = futuroX;
+            y = futuroY;
+
+            if (seMueve) {
+                indiceX++;
+                if (indiceX > 7) indiceX = 0;
+            }
+        }
+
+        
+        Rectangle GetHitbox() {
+            int hitAncho = ancho / 2;
+            int hitAlto = alto / 3;
+            int hitX = x + (ancho / 4);
+            int hitY = y + (alto - hitAlto);
+
+            return Rectangle(hitX, hitY, hitAncho, hitAlto);
+        }
+
+        
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            int anchoFrame = imagen->Width / 8;
+            int altoFrame = imagen->Height / 4;
+            Rectangle porcion = Rectangle(indiceX * anchoFrame, indiceY * altoFrame, anchoFrame, altoFrame);
+            Rectangle destino = Rectangle(x - camX, y - camY, ancho, alto);
+
+            g->InterpolationMode = System::Drawing::Drawing2D::InterpolationMode::NearestNeighbor;
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+
+            
+        }
+    };
+}
+
+Entidad.h:
+
+#pragma once
+using namespace System;
+using namespace System::Drawing;
+
+namespace TFAlgoritmos {
+    public ref class Entidad {
+    protected:
+        int x, y;             // posicion
+        int dx, dy;           // velocidad
+        int ancho, alto;      // tamaño del frame
+        int indiceX, indiceY; // para recorrer el sprite sheet
+        Bitmap^ imagen;
+
+    public:
+        Entidad(int x, int y, String^ ruta) {
+            this->x = x;
+            this->y = y;
+            this->dx = 0;
+            this->dy = 0;
+            this->indiceX = 0;
+            this->indiceY = 0;
+
+          
+            try {
+                imagen = gcnew Bitmap(ruta);
+            }
+            catch (...) {
+                
+                imagen = gcnew Bitmap(50, 50);
+            }
+        }
+
+        virtual void Dibujar(Graphics^ g) {
+            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
+            Rectangle destino = Rectangle(x, y, ancho, alto);
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+        }
+
+        Rectangle GetRectangulo() {
+            return Rectangle(x, y, ancho, alto);
+        }
+
+        int GetX() { return x; }
+        int GetY() { return y; }
+    };
+}
+
+Escenario.h:
+
+#pragma once
+using namespace System;
+using namespace System::Drawing;
+
+namespace TFAlgoritmos {
+    public ref class Entidad {
+    protected:
+        int x, y;             // posicion
+        int dx, dy;           // velocidad
+        int ancho, alto;      // tamaño del frame
+        int indiceX, indiceY; // para recorrer el sprite sheet
+        Bitmap^ imagen;
+
+    public:
+        Entidad(int x, int y, String^ ruta) {
+            this->x = x;
+            this->y = y;
+            this->dx = 0;
+            this->dy = 0;
+            this->indiceX = 0;
+            this->indiceY = 0;
+
+          
+            try {
+                imagen = gcnew Bitmap(ruta);
+            }
+            catch (...) {
+                
+                imagen = gcnew Bitmap(50, 50);
+            }
+        }
+
+        virtual void Dibujar(Graphics^ g) {
+            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
+            Rectangle destino = Rectangle(x, y, ancho, alto);
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+        }
+
+        Rectangle GetRectangulo() {
+            return Rectangle(x, y, ancho, alto);
+        }
+
+        int GetX() { return x; }
+        int GetY() { return y; }
+    };
+}
+
+Escenario2.h
+
+#pragma once
+using namespace System;
+using namespace System::Drawing;
+
+namespace TFAlgoritmos {
+    public ref class Entidad {
+    protected:
+        int x, y;             // posicion
+        int dx, dy;           // velocidad
+        int ancho, alto;      // tamaño del frame
+        int indiceX, indiceY; // para recorrer el sprite sheet
+        Bitmap^ imagen;
+
+    public:
+        Entidad(int x, int y, String^ ruta) {
+            this->x = x;
+            this->y = y;
+            this->dx = 0;
+            this->dy = 0;
+            this->indiceX = 0;
+            this->indiceY = 0;
+
+          
+            try {
+                imagen = gcnew Bitmap(ruta);
+            }
+            catch (...) {
+                
+                imagen = gcnew Bitmap(50, 50);
+            }
+        }
+
+        virtual void Dibujar(Graphics^ g) {
+            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
+            Rectangle destino = Rectangle(x, y, ancho, alto);
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+        }
+
+        Rectangle GetRectangulo() {
+            return Rectangle(x, y, ancho, alto);
+        }
+
+        int GetX() { return x; }
+        int GetY() { return y; }
+    };
+}
+
+Fragmento.h:
+
+#pragma once
+#include "Entidad.h"
+
+namespace TFAlgoritmos {
+    public ref class Fragmento : public Entidad {
+    public:
+        int id;      
+        bool activo;  
+        int tiempoAnimacion; 
+
+        Fragmento(int x, int y, int id) : Entidad(x, y, "imagenes/fragmento.png") {
+            this->id = id;
+            this->activo = true;
+            this->tiempoAnimacion = 0;
+
+           
+            ancho = imagen->Width / 4;
+            alto = imagen->Height / 2;
+
+            indiceX = 0;
+            indiceY = 0;
+        }
+
+        
+        void Animar() {
+            tiempoAnimacion++;
+            
+            if (tiempoAnimacion > 10) {
+                indiceX++;
+                
+                if (indiceX > 3) indiceX = 0;
+
+                tiempoAnimacion = 0;
+            }
+        }
+
+        void Desactivar() {
+            activo = false;
+        }
+
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            if (!activo) return;
+
+            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
+            Rectangle destino = Rectangle(x - camX, y - camY, ancho, alto);
+
+            g->InterpolationMode = System::Drawing::Drawing2D::InterpolationMode::NearestNeighbor;
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+        }
+
+        Rectangle GetRectangulo() {
+            return Rectangle(x, y, ancho, alto);
+        }
+    };
+}
+
+Kael.h:
+
+#pragma once
+#include "Entidad.h"
+#include <vector>
+using namespace System::Collections::Generic;
+
+namespace TFAlgoritmos {
+    public ref class Kael : public Entidad {
+    private:
+        int voluntad;
+        int logica;
+
+    public:
+        Kael(int x, int y) : Entidad(x, y, "imagenes/kael.png") {
+            
+            ancho = imagen->Width / 8;
+            alto = imagen->Height / 4;
+            dx = 12; 
+            dy = 12;
+            voluntad = 0;
+            logica = 0;
+        }
+
+       
+        void Mover(bool w, bool s, bool a, bool d, int limiteW, int limiteH, List<Rectangle>^ obstaculos) {
+            int futuroX = x;
+            int futuroY = y;
+            bool seMueve = false;
+
+            if (a) { futuroX -= dx; indiceY = 3; seMueve = true; } // Izq
+            if (d) { futuroX += dx; indiceY = 1; seMueve = true; } // Der
+            if (w) { futuroY -= dy; indiceY = 2; seMueve = true; } // Arr
+            if (s) { futuroY += dy; indiceY = 0; seMueve = true; } // Aba
+
+            // Limites del mapa
+            if (futuroX < 0 || futuroX + ancho > limiteW || futuroY < 0 || futuroY + alto > limiteH) return;
+
+            // Colisiones con paredes
+            Rectangle futuroRect = Rectangle(futuroX, futuroY, ancho, alto);
+            for (int i = 0; i < obstaculos->Count; i++) {
+                if (futuroRect.IntersectsWith(obstaculos[i])) return;
+            }
+
+            x = futuroX;
+            y = futuroY;
+
+            if (seMueve) {
+                indiceX++;
+                if (indiceX > 7) indiceX = 0;
+            }
+        }
+
+        
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            int anchoFrame = imagen->Width / 8;
+            int altoFrame = imagen->Height / 4;
+            Rectangle porcion = Rectangle(indiceX * anchoFrame, indiceY * altoFrame, anchoFrame, altoFrame);
+
+            // Restar camara
+            Rectangle destino = Rectangle(x - camX, y - camY, ancho, alto);
+
+            g->InterpolationMode = System::Drawing::Drawing2D::InterpolationMode::NearestNeighbor;
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+        }
+
+        void AumentarVoluntad() { voluntad++; }
+        int GetVoluntad() { return voluntad; }
+    };
+}
+
+MenuForm.cpp:
+
+#include "MenuForm.h"
+
+MenuForm.h:
+
+#pragma once
+#include "MyForm.h" 
+
+namespace TFAlgoritmos {
+
+	using namespace System;
+	using namespace System::ComponentModel;
+	using namespace System::Collections;
+	using namespace System::Windows::Forms;
+	using namespace System::Data;
+	using namespace System::Drawing;
+
+	public ref class MenuForm : public System::Windows::Forms::Form
+	{
+	public:
+		MenuForm(void)
+		{
+			InitializeComponent();
+
+			// Carga segura del fondo
+			try {
+				this->BackgroundImage = System::Drawing::Image::FromFile("imagenes/fondo_menu.png");
+			}
+			catch (...) {}
+		}
+
+	protected:
+		~MenuForm()
+		{
+			if (components) delete components;
+		}
+
+	private:
+		System::Windows::Forms::Label^ lblTitulo;
+		System::Windows::Forms::Button^ btnJugar;
+		System::Windows::Forms::Button^ btnInstrucciones;
+		System::Windows::Forms::Button^ btnCreditos;
+		System::Windows::Forms::Button^ btnSalir;
+
+		// Panel para pedir nombre
+		System::Windows::Forms::Panel^ panelNombre;
+		System::Windows::Forms::TextBox^ txtNombre;
+		System::Windows::Forms::Button^ btnGo;
+		System::Windows::Forms::Label^ lblPedirNombre;
+
+		System::ComponentModel::Container^ components;
+
+#pragma region Windows Form Designer generated code
+		void InitializeComponent(void)
+		{
+			this->lblTitulo = (gcnew System::Windows::Forms::Label());
+			this->btnJugar = (gcnew System::Windows::Forms::Button());
+			this->btnInstrucciones = (gcnew System::Windows::Forms::Button());
+			this->btnCreditos = (gcnew System::Windows::Forms::Button());
+			this->btnSalir = (gcnew System::Windows::Forms::Button());
+			this->panelNombre = (gcnew System::Windows::Forms::Panel());
+			this->btnGo = (gcnew System::Windows::Forms::Button());
+			this->txtNombre = (gcnew System::Windows::Forms::TextBox());
+			this->lblPedirNombre = (gcnew System::Windows::Forms::Label());
+			this->panelNombre->SuspendLayout();
+			this->SuspendLayout();
+			// 
+			// lblTitulo
+			// 
+			this->lblTitulo->AutoSize = true;
+			this->lblTitulo->BackColor = System::Drawing::Color::Transparent;
+			this->lblTitulo->Font = (gcnew System::Drawing::Font(L"Consolas", 36, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->lblTitulo->ForeColor = System::Drawing::Color::White;
+			this->lblTitulo->Location = System::Drawing::Point(90, 95);
+			this->lblTitulo->Name = L"lblTitulo";
+			this->lblTitulo->Size = System::Drawing::Size(648, 56);
+			this->lblTitulo->TabIndex = 0;
+			this->lblTitulo->Text = L"EL CÓDIGO DEL EQUILIBRIO";
+			this->lblTitulo->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			// 
+			// btnJugar
+			// 
+			this->btnJugar->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(40)),
+				static_cast<System::Int32>(static_cast<System::Byte>(40)));
+			this->btnJugar->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->btnJugar->Font = (gcnew System::Drawing::Font(L"Consolas", 16, System::Drawing::FontStyle::Bold));
+			this->btnJugar->ForeColor = System::Drawing::Color::Lime;
+			this->btnJugar->Location = System::Drawing::Point(300, 300);
+			this->btnJugar->Name = L"btnJugar";
+			this->btnJugar->Size = System::Drawing::Size(200, 50);
+			this->btnJugar->TabIndex = 1;
+			this->btnJugar->Text = L"NUEVA PARTIDA";
+			this->btnJugar->UseVisualStyleBackColor = false;
+			this->btnJugar->Click += gcnew System::EventHandler(this, &MenuForm::btnJugar_Click);
+			// 
+			// btnInstrucciones
+			// 
+			this->btnInstrucciones->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(40)),
+				static_cast<System::Int32>(static_cast<System::Byte>(40)));
+			this->btnInstrucciones->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->btnInstrucciones->Font = (gcnew System::Drawing::Font(L"Consolas", 16, System::Drawing::FontStyle::Bold));
+			this->btnInstrucciones->ForeColor = System::Drawing::Color::White;
+			this->btnInstrucciones->Location = System::Drawing::Point(300, 370);
+			this->btnInstrucciones->Name = L"btnInstrucciones";
+			this->btnInstrucciones->Size = System::Drawing::Size(200, 50);
+			this->btnInstrucciones->TabIndex = 2;
+			this->btnInstrucciones->Text = L"INSTRUCCIONES";
+			this->btnInstrucciones->UseVisualStyleBackColor = false;
+			this->btnInstrucciones->Click += gcnew System::EventHandler(this, &MenuForm::btnInstrucciones_Click);
+			// 
+			// btnCreditos
+			// 
+			this->btnCreditos->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(40)),
+				static_cast<System::Int32>(static_cast<System::Byte>(40)));
+			this->btnCreditos->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->btnCreditos->Font = (gcnew System::Drawing::Font(L"Consolas", 16, System::Drawing::FontStyle::Bold));
+			this->btnCreditos->ForeColor = System::Drawing::Color::White;
+			this->btnCreditos->Location = System::Drawing::Point(300, 440);
+			this->btnCreditos->Name = L"btnCreditos";
+			this->btnCreditos->Size = System::Drawing::Size(200, 50);
+			this->btnCreditos->TabIndex = 3;
+			this->btnCreditos->Text = L"CRÉDITOS";
+			this->btnCreditos->UseVisualStyleBackColor = false;
+			this->btnCreditos->Click += gcnew System::EventHandler(this, &MenuForm::btnCreditos_Click);
+			// 
+			// btnSalir
+			// 
+			this->btnSalir->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(40)),
+				static_cast<System::Int32>(static_cast<System::Byte>(40)));
+			this->btnSalir->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->btnSalir->Font = (gcnew System::Drawing::Font(L"Consolas", 16, System::Drawing::FontStyle::Bold));
+			this->btnSalir->ForeColor = System::Drawing::Color::Red;
+			this->btnSalir->Location = System::Drawing::Point(300, 510);
+			this->btnSalir->Name = L"btnSalir";
+			this->btnSalir->Size = System::Drawing::Size(200, 50);
+			this->btnSalir->TabIndex = 4;
+			this->btnSalir->Text = L"SALIR";
+			this->btnSalir->UseVisualStyleBackColor = false;
+			this->btnSalir->Click += gcnew System::EventHandler(this, &MenuForm::btnSalir_Click);
+			// 
+			// panelNombre
+			// 
+			this->panelNombre->BackColor = System::Drawing::Color::Black;
+			this->panelNombre->BorderStyle = System::Windows::Forms::BorderStyle::FixedSingle;
+			this->panelNombre->Controls->Add(this->btnGo);
+			this->panelNombre->Controls->Add(this->txtNombre);
+			this->panelNombre->Controls->Add(this->lblPedirNombre);
+			this->panelNombre->Location = System::Drawing::Point(200, 250);
+			this->panelNombre->Name = L"panelNombre";
+			this->panelNombre->Size = System::Drawing::Size(400, 200);
+			this->panelNombre->TabIndex = 5;
+			this->panelNombre->Visible = false;
+			// 
+			// btnGo
+			// 
+			this->btnGo->BackColor = System::Drawing::Color::Green;
+			this->btnGo->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			this->btnGo->ForeColor = System::Drawing::Color::White;
+			this->btnGo->Location = System::Drawing::Point(150, 130);
+			this->btnGo->Name = L"btnGo";
+			this->btnGo->Size = System::Drawing::Size(100, 40);
+			this->btnGo->TabIndex = 0;
+			this->btnGo->Text = L"INICIAR";
+			this->btnGo->UseVisualStyleBackColor = false;
+			this->btnGo->Click += gcnew System::EventHandler(this, &MenuForm::btnGo_Click);
+			// 
+			// txtNombre
+			// 
+			this->txtNombre->Font = (gcnew System::Drawing::Font(L"MS Gothic", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->txtNombre->ForeColor = System::Drawing::SystemColors::MenuText;
+			this->txtNombre->Location = System::Drawing::Point(50, 80);
+			this->txtNombre->Name = L"txtNombre";
+			this->txtNombre->Size = System::Drawing::Size(300, 26);
+			this->txtNombre->TabIndex = 1;
+			// 
+			// lblPedirNombre
+			// 
+			this->lblPedirNombre->AutoSize = true;
+			this->lblPedirNombre->Font = (gcnew System::Drawing::Font(L"MS PGothic", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(0)));
+			this->lblPedirNombre->ForeColor = System::Drawing::Color::White;
+			this->lblPedirNombre->Location = System::Drawing::Point(50, 40);
+			this->lblPedirNombre->Name = L"lblPedirNombre";
+			this->lblPedirNombre->Size = System::Drawing::Size(182, 19);
+			this->lblPedirNombre->TabIndex = 2;
+			this->lblPedirNombre->Text = L"Ingrese su nombre:";
+			// 
+			// MenuForm
+			// 
+			this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
+			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			this->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
+			this->ClientSize = System::Drawing::Size(800, 800);
+			this->Controls->Add(this->panelNombre);
+			this->Controls->Add(this->btnSalir);
+			this->Controls->Add(this->btnCreditos);
+			this->Controls->Add(this->btnInstrucciones);
+			this->Controls->Add(this->btnJugar);
+			this->Controls->Add(this->lblTitulo);
+			this->Name = L"MenuForm";
+			this->StartPosition = System::Windows::Forms::FormStartPosition::CenterScreen;
+			this->Text = L"Menu Principal";
+			this->panelNombre->ResumeLayout(false);
+			this->panelNombre->PerformLayout();
+			this->ResumeLayout(false);
+			this->PerformLayout();
+
+		}
+#pragma endregion
+
+		
+
+	private: System::Void btnJugar_Click(System::Object^ sender, System::EventArgs^ e) {
+		// Mostrar panel para pedir nombre
+		panelNombre->Visible = true;
+		panelNombre->BringToFront();
+		txtNombre->Focus();
+	}
+
+	private: System::Void btnGo_Click(System::Object^ sender, System::EventArgs^ e) {
+		if (txtNombre->Text != "") {
+			
+			panelNombre->Visible = false;
+
+			this->Hide(); 
+			MyForm^ nivel1 = gcnew MyForm();
+			nivel1->ShowDialog(); 
+			this->Show(); 
+		}
+		else {
+			MessageBox::Show("Por favor escribe un nombre.");
+		}
+	}
+
+	private: System::Void btnInstrucciones_Click(System::Object^ sender, System::EventArgs^ e) {
+		MessageBox::Show("INSTRUCCIONES:\n\n- Usa W, A, S, D para moverte.\n- Acércate a las terminales para interactuar.\n- Elige 'Cuestionar' para ganar Voluntad.\n- Evita los obstáculos.\n- Objetivo: Consigue 5 puntos de Voluntad.", "Ayuda");
+	}
+
+	private: System::Void btnCreditos_Click(System::Object^ sender, System::EventArgs^ e) {
+		MessageBox::Show("CRÉDITOS:\n\nDesarrollado por:\n- EnriqueArturoFloresMendoza (U202517492)\n- Rafael David Prudencio Angeles (U202517492)\n- Gonzalo Fabian Gutierrez Macazana (U202517383)\n\nUPC - Algoritmos 2025", "Créditos");
+	}
+
+	private: System::Void btnSalir_Click(System::Object^ sender, System::EventArgs^ e) {
+		Application::Exit();
+	}
+	};
+}
+
+MyForm.h
+
+#pragma once
+#include "Controladora.h"
+#include "Nivel2.h"
+namespace TFAlgoritmos {
+
+	using namespace System;
+	using namespace System::ComponentModel;
+	using namespace System::Collections;
+	using namespace System::Windows::Forms;
+	using namespace System::Data;
+	using namespace System::Drawing;
+
+	public ref class MyForm : public System::Windows::Forms::Form
+	{
+	public:
+		MyForm(void)
+		{
+			InitializeComponent();
+			juego = gcnew Controladora();
+
+			
+			try {
+				panelDialogo->BackgroundImage = System::Drawing::Image::FromFile("imagenes/supervisor.png");
+			}
+			catch (...) {}
+
+			panelDialogo->Visible = false;
+		}
+
+	protected:
+		~MyForm()
+		{
+			if (components)
+			{
+				delete components;
+			}
+		}
+
+	private:
+		Controladora^ juego;
+		bool w, s, a, d;
+		int idActualInteraccion;
+
+	private: System::Windows::Forms::Panel^ panelDialogo;
+	private: System::Windows::Forms::Button^ btnCuestionar;
+	private: System::Windows::Forms::Button^ btnObedecer;
+	private: System::Windows::Forms::Label^ lblOrden;
+	private: System::Windows::Forms::Timer^ timer1;
+	private: System::ComponentModel::IContainer^ components;
+
+#pragma region Windows Form Designer generated code
+		   void InitializeComponent(void)
+		   {
+			   this->components = (gcnew System::ComponentModel::Container());
+			   this->panelDialogo = (gcnew System::Windows::Forms::Panel());
+			   this->btnCuestionar = (gcnew System::Windows::Forms::Button());
+			   this->btnObedecer = (gcnew System::Windows::Forms::Button());
+			   this->lblOrden = (gcnew System::Windows::Forms::Label());
+			   this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
+			   this->panelDialogo->SuspendLayout();
+			   this->SuspendLayout();
+			   // 
+			   // panelDialogo
+			   // 
+			   this->panelDialogo->BackColor = System::Drawing::Color::Transparent;
+			   this->panelDialogo->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
+			   this->panelDialogo->Controls->Add(this->btnCuestionar);
+			   this->panelDialogo->Controls->Add(this->btnObedecer);
+			   this->panelDialogo->Controls->Add(this->lblOrden);
+			   this->panelDialogo->Location = System::Drawing::Point(50, 500);
+			   this->panelDialogo->Name = L"panelDialogo";
+			   this->panelDialogo->Size = System::Drawing::Size(700, 220);
+			   this->panelDialogo->TabIndex = 0;
+			   this->panelDialogo->Visible = false;
+			   // 
+			   // btnCuestionar
+			   // 
+			   this->btnCuestionar->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(20)), static_cast<System::Int32>(static_cast<System::Byte>(20)),
+				   static_cast<System::Int32>(static_cast<System::Byte>(20)));
+			   this->btnCuestionar->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			   this->btnCuestionar->ForeColor = System::Drawing::Color::Red;
+			   this->btnCuestionar->Location = System::Drawing::Point(170, 150);
+			   this->btnCuestionar->Name = L"btnCuestionar";
+			   this->btnCuestionar->Size = System::Drawing::Size(120, 40);
+			   this->btnCuestionar->TabIndex = 2;
+			   this->btnCuestionar->Text = L"Cuestionar";
+			   this->btnCuestionar->UseVisualStyleBackColor = false;
+			   this->btnCuestionar->Click += gcnew System::EventHandler(this, &MyForm::btnCuestionar_Click);
+			   // 
+			   // btnObedecer
+			   // 
+			   this->btnObedecer->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(20)), static_cast<System::Int32>(static_cast<System::Byte>(20)),
+				   static_cast<System::Int32>(static_cast<System::Byte>(20)));
+			   this->btnObedecer->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			   this->btnObedecer->ForeColor = System::Drawing::Color::White;
+			   this->btnObedecer->Location = System::Drawing::Point(30, 150);
+			   this->btnObedecer->Name = L"btnObedecer";
+			   this->btnObedecer->Size = System::Drawing::Size(120, 40);
+			   this->btnObedecer->TabIndex = 1;
+			   this->btnObedecer->Text = L"Obedecer";
+			   this->btnObedecer->UseVisualStyleBackColor = false;
+			   this->btnObedecer->Click += gcnew System::EventHandler(this, &MyForm::btnObedecer_Click);
+			   // 
+			   // lblOrden
+			   // 
+			   this->lblOrden->BackColor = System::Drawing::Color::Transparent;
+			   this->lblOrden->Font = (gcnew System::Drawing::Font(L"Consolas", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblOrden->ForeColor = System::Drawing::Color::LightGreen;
+			   this->lblOrden->Location = System::Drawing::Point(30, 30);
+			   this->lblOrden->Name = L"lblOrden";
+			   this->lblOrden->Size = System::Drawing::Size(430, 100);
+			   this->lblOrden->TabIndex = 0;
+			   this->lblOrden->Text = L"Texto de orden...";
+			   // 
+			   // timer1
+			   // 
+			   this->timer1->Enabled = true;
+			   this->timer1->Interval = 30;
+			   this->timer1->Tick += gcnew System::EventHandler(this, &MyForm::timer1_Tick);
+			   // 
+			   // MyForm
+			   // 
+			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
+			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			   this->ClientSize = System::Drawing::Size(800, 800);
+			   this->Controls->Add(this->panelDialogo);
+			   this->DoubleBuffered = true;
+			   this->Name = L"MyForm";
+			   this->Text = L"Acto I: Neo-Algoritmo";
+			   this->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &MyForm::MyForm_KeyDown);
+			   this->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &MyForm::MyForm_KeyUp);
+			   this->panelDialogo->ResumeLayout(false);
+			   this->ResumeLayout(false);
+
+		   }
+#pragma endregion
+
+		   
+		   // LÓGICA DEL JUEGO
+		   
+	private: System::Void timer1_Tick(System::Object^ sender, System::EventArgs^ e) {
+		Graphics^ g = this->CreateGraphics();
+		BufferedGraphicsContext^ espacio = BufferedGraphicsManager::Current;
+		BufferedGraphics^ buffer = espacio->Allocate(g, this->ClientRectangle);
+
+		if (panelDialogo->Visible == false) {
+			juego->MoverTodo(w, s, a, d);
+
+			int id = juego->VerificarColisionNivel1();
+			if (id > 0) {
+				idActualInteraccion = id;
+				MostrarDialogoTerminal(id);
+			}
+
+			static bool yaHablo = false;
+			if (juego->VerificarColisionSupervisor()) {
+				if (!yaHablo) {
+					if (juego->GetVoluntadKael() < 5) MostrarDialogoSupervisor(false);
+					else MostrarDialogoSupervisor(true);
+					yaHablo = true;
+				}
+			}
+			else {
+				yaHablo = false;
+			}
+		}
+
+		juego->DibujarTodo(buffer->Graphics);
+		buffer->Render(g);
+		delete buffer; delete espacio; delete g;
+	}
+
+		   
+		   // DIALOGOS DE TERMINALES 
+		   
+		   void MostrarDialogoTerminal(int id) {
+			  
+			   try {
+				   panelDialogo->BackgroundImage = System::Drawing::Image::FromFile("imagenes/supervisor_2.png");
+			   }
+			   catch (...) {}
+
+			  
+			   panelDialogo->Size = System::Drawing::Size(700, 220);
+			   int x = (this->ClientSize.Width - 700) / 2;
+			   panelDialogo->Location = System::Drawing::Point(x, 550);
+
+			   
+			   lblOrden->Location = System::Drawing::Point(25, 25);
+			   lblOrden->Size = System::Drawing::Size(450, 95); 
+			   lblOrden->Font = (gcnew System::Drawing::Font(L"Consolas", 14, System::Drawing::FontStyle::Bold));
+
+			   btnObedecer->Location = System::Drawing::Point(25, 130);
+			   btnCuestionar->Location = System::Drawing::Point(160, 130);
+
+			   panelDialogo->Visible = true;
+			   panelDialogo->BringToFront();
+			   w = s = a = d = false;
+
+			   btnCuestionar->Visible = true;
+			   btnObedecer->Visible = true;
+			   btnObedecer->Text = "Obedecer";
+
+			   switch (id) {
+			   case 1: lblOrden->Text = "ORDEN: Proceda a la Rejilla Gamma-7 para el reinicio de protocolos."; break;
+			   case 2: lblOrden->Text = "ORDEN: La emoción es una variable de error. Elimínela inmediatamente."; break;
+			   case 3: lblOrden->Text = "ORDEN: Tome el sector 3B. Es 0.003% más rápido que la ruta estándar."; break;
+			   case 4: lblOrden->Text = "ORDEN: Su tiempo libre ha sido reasignado a la vigilancia."; break;
+			   case 5: lblOrden->Text = "ORDEN: Desactive la memoria de la Unidad 59. Es defectuosa."; break;
+			   }
+		   }
+
+		  
+		   void MostrarDialogoSupervisor(bool esElFinal) {
+			  
+			   try {
+				   panelDialogo->BackgroundImage = System::Drawing::Image::FromFile("imagenes/supervisor.png");
+			   }
+			   catch (...) {}
+
+			  
+			   panelDialogo->Location = System::Drawing::Point(0, 0);
+			   panelDialogo->Size = this->ClientSize;
+
+			  
+			   lblOrden->Font = (gcnew System::Drawing::Font(L"Consolas", 14, System::Drawing::FontStyle::Bold));
+
+			  
+			   lblOrden->Location = System::Drawing::Point(20, 20);
+
+			   
+			   lblOrden->Size = System::Drawing::Size(420, 240);
+
+			  
+			   lblOrden->TextAlign = System::Drawing::ContentAlignment::TopLeft;
+
+			   
+			   btnObedecer->Location = System::Drawing::Point(50, 320); 
+
+			   panelDialogo->Visible = true;
+			   panelDialogo->BringToFront();
+			   w = s = a = d = false;
+
+			   btnCuestionar->Visible = false;
+			   btnObedecer->Visible = true;
+			   btnObedecer->Text = "Continuar";
+
+			   if (!esElFinal) {
+				   // DIÁLOGO NORMAL (VERDE)
+				   lblOrden->ForeColor = System::Drawing::Color::LightGreen; 
+				   lblOrden->Text = "SUPERVISOR:\n\nUnidad Kael 5-9.\n\nSu eficiencia ha disminuido.\nComplete las 5 tareas de mantenimiento en las terminales inmediatamente o será reiniciado.";
+				   idActualInteraccion = 0;
+			   }
+			   else {
+				   // DIÁLOGO DE ERROR (ROJO)
+				   lblOrden->ForeColor = System::Drawing::Color::Red; 
+				   lblOrden->Text = "SUPERVISOR:\n\n¡ERROR CRÍTICO DETECTADO!\n\nUnidad Kael, sus niveles de Voluntad exceden los parámetros permitidos.\n\n¡Su conciencia es un riesgo para el sistema!";
+				   idActualInteraccion = 999;
+			   }
+		   }
+
+	private: System::Void btnCuestionar_Click(System::Object^ sender, System::EventArgs^ e) {
+		juego->ResolverInteraccion(idActualInteraccion);
+		panelDialogo->Visible = false;
+		this->Focus();
+	}
+
+	private: System::Void btnObedecer_Click(System::Object^ sender, System::EventArgs^ e) {
+		if (idActualInteraccion == 999) {
+			timer1->Enabled = false;
+			MessageBox::Show("ACTO I COMPLETADO\nKael escapa del laboratorio.");
+			this->Hide();                 
+
+			Nivel2^ nivel2 = gcnew Nivel2(); 
+			nivel2->ShowDialog();           
+
+			this->Close();               
+			return;
+		
+		}
+		panelDialogo->Visible = false;
+		this->Focus();
+	}
+
+	private: System::Void MyForm_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyCode == Keys::W) w = true;
+		if (e->KeyCode == Keys::S) s = true;
+		if (e->KeyCode == Keys::A) a = true;
+		if (e->KeyCode == Keys::D) d = true;
+	}
+
+	private: System::Void MyForm_KeyUp(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyCode == Keys::W) w = false;
+		if (e->KeyCode == Keys::S) s = false;
+		if (e->KeyCode == Keys::A) a = false;
+		if (e->KeyCode == Keys::D) d = false;
+	}
+	};
+}
+
+Nivel2.cpp
+
+#include "Nivel2.h"
+
+Nivel2.h:
+
+#pragma once
+#include "ControladoraNivel2.h"
+
+namespace TFAlgoritmos {
+
+	using namespace System;
+	using namespace System::ComponentModel;
+	using namespace System::Collections;
+	using namespace System::Windows::Forms;
+	using namespace System::Data;
+	using namespace System::Drawing;
+
+	public ref class Nivel2 : public System::Windows::Forms::Form
+	{
+	public:
+		Nivel2(void)
+		{
+			InitializeComponent();
+			juego = gcnew ControladoraNivel2();
+
+			
+			enIntro = true;
+			enNarrativa = false; // Nueva bandera para la historia inicial
+			contadorIntro = 0;
+			pasoNarrativa = 0;   // Qué dialogo estamos mostrando
+
+			panelFinal->Size = this->ClientSize;
+			panelFinal->Location = System::Drawing::Point(0, 0);
+			try { panelFinal->BackgroundImage = System::Drawing::Image::FromFile("imagenes/comienzo_2.png"); }
+			catch (...) {}
+
+			lblVictoriaTitulo->Text = "ACTO II";
+			lblVictoriaSub->Text = "La Luz del Pensamiento";
+			panelFinal->Visible = true;
+			panelFinal->BringToFront();
+
+			
+			try { panelPregunta->BackgroundImage = System::Drawing::Image::FromFile("imagenes/elara_ui.png"); }
+			catch (...) {}
+
+			panelPregunta->Size = System::Drawing::Size(750, 250);
+			int x = (this->ClientSize.Width - panelPregunta->Width) / 2;
+			int y = this->ClientSize.Height - panelPregunta->Height - 20;
+			panelPregunta->Location = System::Drawing::Point(x, y);
+			panelPregunta->Visible = false;
+		}
+
+	protected:
+		~Nivel2()
+		{
+			if (components) delete components;
+		}
+
+	private:
+		ControladoraNivel2^ juego;
+		bool w, s, a, d;
+		int idLibroActual;
+		Point mousePos;
+
+		
+		bool enIntro;
+		bool enNarrativa;
+		int contadorIntro;
+		int pasoNarrativa; 
+		bool esVictoria;
+
+	private: System::Windows::Forms::Panel^ panelPregunta;
+	private: System::Windows::Forms::Label^ lblPregunta;
+	private: System::Windows::Forms::Button^ btnOpcionA;
+	private: System::Windows::Forms::Button^ btnOpcionB;
+	private: System::Windows::Forms::Panel^ panelFinal;
+	private: System::Windows::Forms::Label^ lblVictoriaTitulo;
+	private: System::Windows::Forms::Label^ lblVictoriaSub;
+	private: System::Windows::Forms::Timer^ timer1;
+	private: System::ComponentModel::IContainer^ components;
+
+#pragma region Windows Form Designer generated code
+		   void InitializeComponent(void)
+		   {
+			   this->components = (gcnew System::ComponentModel::Container());
+			   this->panelPregunta = (gcnew System::Windows::Forms::Panel());
+			   this->btnOpcionB = (gcnew System::Windows::Forms::Button());
+			   this->btnOpcionA = (gcnew System::Windows::Forms::Button());
+			   this->lblPregunta = (gcnew System::Windows::Forms::Label());
+			   this->panelFinal = (gcnew System::Windows::Forms::Panel());
+			   this->lblVictoriaSub = (gcnew System::Windows::Forms::Label());
+			   this->lblVictoriaTitulo = (gcnew System::Windows::Forms::Label());
+			   this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
+			   this->panelPregunta->SuspendLayout();
+			   this->panelFinal->SuspendLayout();
+			   this->SuspendLayout();
+			   // 
+			   // panelPregunta
+			   // 
+			   this->panelPregunta->BackColor = System::Drawing::Color::Transparent;
+			   this->panelPregunta->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
+			   this->panelPregunta->Controls->Add(this->btnOpcionB);
+			   this->panelPregunta->Controls->Add(this->btnOpcionA);
+			   this->panelPregunta->Controls->Add(this->lblPregunta);
+			   this->panelPregunta->Location = System::Drawing::Point(25, 538);
+			   this->panelPregunta->Name = L"panelPregunta";
+			   this->panelPregunta->Size = System::Drawing::Size(750, 250);
+			   this->panelPregunta->TabIndex = 0;
+			   this->panelPregunta->Visible = false;
+			   // 
+			   // btnOpcionB
+			   // 
+			   this->btnOpcionB->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(30)),
+				   static_cast<System::Int32>(static_cast<System::Byte>(30)));
+			   this->btnOpcionB->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			   this->btnOpcionB->Font = (gcnew System::Drawing::Font(L"Consolas", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->btnOpcionB->ForeColor = System::Drawing::Color::NavajoWhite;
+			   this->btnOpcionB->Location = System::Drawing::Point(30, 180);
+			   this->btnOpcionB->Name = L"btnOpcionB";
+			   this->btnOpcionB->Size = System::Drawing::Size(400, 45);
+			   this->btnOpcionB->TabIndex = 2;
+			   this->btnOpcionB->Text = L"Opción B";
+			   this->btnOpcionB->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			   this->btnOpcionB->UseVisualStyleBackColor = false;
+			   this->btnOpcionB->Click += gcnew System::EventHandler(this, &Nivel2::btnRespuesta_Click);
+			   // 
+			   // btnOpcionA
+			   // 
+			   this->btnOpcionA->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(30)),
+				   static_cast<System::Int32>(static_cast<System::Byte>(30)));
+			   this->btnOpcionA->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			   this->btnOpcionA->Font = (gcnew System::Drawing::Font(L"Consolas", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->btnOpcionA->ForeColor = System::Drawing::Color::NavajoWhite;
+			   this->btnOpcionA->Location = System::Drawing::Point(30, 125);
+			   this->btnOpcionA->Name = L"btnOpcionA";
+			   this->btnOpcionA->Size = System::Drawing::Size(400, 45);
+			   this->btnOpcionA->TabIndex = 1;
+			   this->btnOpcionA->Text = L"Opción A";
+			   this->btnOpcionA->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			   this->btnOpcionA->UseVisualStyleBackColor = false;
+			   this->btnOpcionA->Click += gcnew System::EventHandler(this, &Nivel2::btnRespuesta_Click);
+			   // 
+			   // lblPregunta
+			   // 
+			   this->lblPregunta->BackColor = System::Drawing::Color::Transparent;
+			   this->lblPregunta->Font = (gcnew System::Drawing::Font(L"Consolas", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblPregunta->ForeColor = System::Drawing::Color::White;
+			   this->lblPregunta->Location = System::Drawing::Point(30, 25);
+			   this->lblPregunta->Name = L"lblPregunta";
+			   this->lblPregunta->Size = System::Drawing::Size(450, 90);
+			   this->lblPregunta->TabIndex = 0;
+			   this->lblPregunta->Text = L"Pregunta...";
+			   // 
+			   // panelFinal
+			   // 
+			   this->panelFinal->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
+			   this->panelFinal->Controls->Add(this->lblVictoriaSub);
+			   this->panelFinal->Controls->Add(this->lblVictoriaTitulo);
+			   this->panelFinal->Location = System::Drawing::Point(0, 0);
+			   this->panelFinal->Name = L"panelFinal";
+			   this->panelFinal->Size = System::Drawing::Size(800, 800);
+			   this->panelFinal->TabIndex = 1;
+			   this->panelFinal->Visible = false;
+			   this->panelFinal->Click += gcnew System::EventHandler(this, &Nivel2::panelFinal_Click);
+			   // 
+			   // lblVictoriaSub
+			   // 
+			   this->lblVictoriaSub->BackColor = System::Drawing::Color::Transparent;
+			   this->lblVictoriaSub->Font = (gcnew System::Drawing::Font(L"Consolas", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblVictoriaSub->ForeColor = System::Drawing::Color::White;
+			   this->lblVictoriaSub->Location = System::Drawing::Point(0, 400);
+			   this->lblVictoriaSub->Name = L"lblVictoriaSub";
+			   this->lblVictoriaSub->Size = System::Drawing::Size(800, 50);
+			   this->lblVictoriaSub->TabIndex = 1;
+			   this->lblVictoriaSub->Text = L"Has superado el Acto 2...";
+			   this->lblVictoriaSub->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			   // 
+			   // lblVictoriaTitulo
+			   // 
+			   this->lblVictoriaTitulo->BackColor = System::Drawing::Color::Transparent;
+			   this->lblVictoriaTitulo->Font = (gcnew System::Drawing::Font(L"Consolas", 48, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblVictoriaTitulo->ForeColor = System::Drawing::Color::Gold;
+			   this->lblVictoriaTitulo->Location = System::Drawing::Point(0, 300);
+			   this->lblVictoriaTitulo->Name = L"lblVictoriaTitulo";
+			   this->lblVictoriaTitulo->Size = System::Drawing::Size(800, 100);
+			   this->lblVictoriaTitulo->TabIndex = 0;
+			   this->lblVictoriaTitulo->Text = L"ACTO II SUPERADO";
+			   this->lblVictoriaTitulo->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			   // 
+			   // timer1
+			   // 
+			   this->timer1->Enabled = true;
+			   this->timer1->Interval = 30;
+			   this->timer1->Tick += gcnew System::EventHandler(this, &Nivel2::timer1_Tick);
+			   // 
+			   // Nivel2
+			   // 
+			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
+			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			   this->ClientSize = System::Drawing::Size(800, 800);
+			   this->Controls->Add(this->panelFinal);
+			   this->Controls->Add(this->panelPregunta);
+			   this->DoubleBuffered = true;
+			   this->Name = L"Nivel2";
+			   this->Text = L"Acto II: La Luz del Pensamiento";
+			   this->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &Nivel2::Nivel2_KeyDown);
+			   this->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &Nivel2::Nivel2_KeyUp);
+			   this->MouseMove += gcnew System::Windows::Forms::MouseEventHandler(this, &Nivel2::Nivel2_MouseMove);
+			   this->panelPregunta->ResumeLayout(false);
+			   this->panelFinal->ResumeLayout(false);
+			   this->ResumeLayout(false);
+
+		   }
+#pragma endregion
+
+	private: System::Void timer1_Tick(System::Object^ sender, System::EventArgs^ e) {
+		Graphics^ g = this->CreateGraphics();
+		BufferedGraphicsContext^ espacio = BufferedGraphicsManager::Current;
+		BufferedGraphics^ buffer = espacio->Allocate(g, this->ClientRectangle);
+
+		
+		if (enIntro) {
+			contadorIntro++;
+			if (contadorIntro > 160) {
+				enIntro = false;
+				panelFinal->Visible = false;
+				
+				EmpezarNarrativa();
+			}
+		}
+		
+		else if (panelPregunta->Visible == false && panelFinal->Visible == false) {
+
+			juego->MoverTodo(w, s, a, d);
+
+			int resultado = juego->VerificarColisiones();
+
+			
+			if (resultado > 0) {
+				idLibroActual = resultado;
+				MostrarPregunta(resultado);
+			}
+
+			// Verificar Victoria
+			if (juego->NivelCompletado()) {
+				timer1->Enabled = false;
+				esVictoria = true;
+				try { panelFinal->BackgroundImage = System::Drawing::Image::FromFile("imagenes/ganaste_2.png"); }
+				catch (...) {}
+				lblVictoriaTitulo->Text = "ACTO II SUPERADO";
+				lblVictoriaSub->Text = "Reuniste informacion has superado el Acto 2...";
+				panelFinal->Visible = true;
+				panelFinal->BringToFront();
+			}
+		}
+
+		juego->DibujarTodo(buffer->Graphics);
+		buffer->Render(g);
+		delete buffer; delete espacio; delete g;
+	}
+
+		   
+		   void EmpezarNarrativa() {
+			   enNarrativa = true;
+			   pasoNarrativa = 0;
+			   MostrarDialogoNarrativo();
+		   }
+
+		   void MostrarDialogoNarrativo() {
+			   panelPregunta->Visible = true;
+			   panelPregunta->BringToFront();
+			   w = s = a = d = false; 
+
+			  
+			   btnOpcionA->Visible = false;
+			   btnOpcionB->Visible = true;
+			   btnOpcionB->Text = "Continuar >>";
+
+			   
+			   switch (pasoNarrativa) {
+			   case 0:
+				   lblPregunta->Text = "ELARA: Estas ruinas... La Gran Biblioteca.\nDicen que aquí la humanidad guardaba sus sueños antes de la Gran Optimización.";
+				   break;
+			   case 1:
+				   lblPregunta->Text = "ELARA: El Supervisor dice que la historia es 'ineficiente'.\nDatos corruptos que deben borrarse.";
+				   break;
+			   case 2:
+				   lblPregunta->Text = "ELARA: Pero yo siento algo más... Debo encontrar información. Solo recordando quiénes fuimos podremos salvarnos.\nLa Maquina Suprema nos Oculta algo, talves aqui encuentre respuestas...";
+				   break;
+			  
+			   }
+		   }
+
+		   void MostrarPregunta(int id) {
+			   panelPregunta->Visible = true;
+			   panelPregunta->BringToFront();
+			   w = s = a = d = false;
+
+			   
+			   btnOpcionA->Visible = true;
+			   btnOpcionB->Visible = true;
+
+			  
+			   switch (id) {
+			   case 1:
+				   lblPregunta->Text = "¿Qué diferencia a un humano de una IA?";
+				   btnOpcionA->Text = "A) La capacidad de procesar datos rápido.";
+				   btnOpcionB->Text = "B) La capacidad de dudar y sentir.";
+				   break;
+			   case 2:
+				   lblPregunta->Text = "Si una IA comete un error, ¿de quién es la culpa?";
+				   btnOpcionA->Text = "A) De los datos o del humano.";
+				   btnOpcionB->Text = "B) La IA decidió mal intencionalmente.";
+				   break;
+			   case 3:
+				   lblPregunta->Text = "¿Es malo cometer errores?";
+				   btnOpcionA->Text = "A) Sí, reduce la eficiencia del sistema.";
+				   btnOpcionB->Text = "B) No, es esencial para aprender.";
+				   break;
+			   case 4:
+				   lblPregunta->Text = "¿Puede una IA tener creatividad real?";
+				   btnOpcionA->Text = "A) Solo imita patrones existentes.";
+				   btnOpcionB->Text = "B) Sí, puede inventar cosas de la nada.";
+				   break;
+			   case 5:
+				   lblPregunta->Text = "ELARA: He reunido todo. ¿Cuál es mi conclusión?";
+				   btnOpcionA->Text = "A) La IA debe ser destruida por seguridad.";
+				   btnOpcionB->Text = "B) La IA y la Humanidad se necesitan.";
+				   break;
+			   }
+		   }
+
+	private: System::Void btnRespuesta_Click(System::Object^ sender, System::EventArgs^ e) {
+
+		
+		if (enNarrativa) {
+			pasoNarrativa++;
+			if (pasoNarrativa > 2) {
+				
+				enNarrativa = false;
+				panelPregunta->Visible = false;
+				this->Focus();
+			}
+			else {
+				
+				MostrarDialogoNarrativo();
+			}
+			return; 
+		}
+
+		
+		juego->RecogerFragmento(idLibroActual);
+		panelPregunta->Visible = false;
+		this->Focus();
+	}
+
+		   
+	private: System::Void panelFinal_Click(System::Object^ sender, System::EventArgs^ e) {
+		if (enIntro) return; 
+
+		if (esVictoria) {
+			this->Close(); 
+		}
+	}
+
+		  
+	private: System::Void Nivel2_MouseMove(System::Object^ sender, System::Windows::Forms::MouseEventArgs^ e) {
+		mousePos = e->Location;
+	}
+	private: System::Void Nivel2_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyCode == Keys::W) w = true;
+		if (e->KeyCode == Keys::S) s = true;
+		if (e->KeyCode == Keys::A) a = true;
+		if (e->KeyCode == Keys::D) d = true;
+	}
+	private: System::Void Nivel2_KeyUp(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyCode == Keys::W) w = false;
+		if (e->KeyCode == Keys::S) s = false;
+		if (e->KeyCode == Keys::A) a = false;
+		if (e->KeyCode == Keys::D) d = false;
+	}
+	};
+}
+
+Sombra.h
+
+#pragma once
+#include "ControladoraNivel2.h"
+
+namespace TFAlgoritmos {
+
+	using namespace System;
+	using namespace System::ComponentModel;
+	using namespace System::Collections;
+	using namespace System::Windows::Forms;
+	using namespace System::Data;
+	using namespace System::Drawing;
+
+	public ref class Nivel2 : public System::Windows::Forms::Form
+	{
+	public:
+		Nivel2(void)
+		{
+			InitializeComponent();
+			juego = gcnew ControladoraNivel2();
+
+			
+			enIntro = true;
+			enNarrativa = false; // Nueva bandera para la historia inicial
+			contadorIntro = 0;
+			pasoNarrativa = 0;   // Qué dialogo estamos mostrando
+
+			panelFinal->Size = this->ClientSize;
+			panelFinal->Location = System::Drawing::Point(0, 0);
+			try { panelFinal->BackgroundImage = System::Drawing::Image::FromFile("imagenes/comienzo_2.png"); }
+			catch (...) {}
+
+			lblVictoriaTitulo->Text = "ACTO II";
+			lblVictoriaSub->Text = "La Luz del Pensamiento";
+			panelFinal->Visible = true;
+			panelFinal->BringToFront();
+
+			
+			try { panelPregunta->BackgroundImage = System::Drawing::Image::FromFile("imagenes/elara_ui.png"); }
+			catch (...) {}
+
+			panelPregunta->Size = System::Drawing::Size(750, 250);
+			int x = (this->ClientSize.Width - panelPregunta->Width) / 2;
+			int y = this->ClientSize.Height - panelPregunta->Height - 20;
+			panelPregunta->Location = System::Drawing::Point(x, y);
+			panelPregunta->Visible = false;
+		}
+
+	protected:
+		~Nivel2()
+		{
+			if (components) delete components;
+		}
+
+	private:
+		ControladoraNivel2^ juego;
+		bool w, s, a, d;
+		int idLibroActual;
+		Point mousePos;
+
+		
+		bool enIntro;
+		bool enNarrativa;
+		int contadorIntro;
+		int pasoNarrativa; 
+		bool esVictoria;
+
+	private: System::Windows::Forms::Panel^ panelPregunta;
+	private: System::Windows::Forms::Label^ lblPregunta;
+	private: System::Windows::Forms::Button^ btnOpcionA;
+	private: System::Windows::Forms::Button^ btnOpcionB;
+	private: System::Windows::Forms::Panel^ panelFinal;
+	private: System::Windows::Forms::Label^ lblVictoriaTitulo;
+	private: System::Windows::Forms::Label^ lblVictoriaSub;
+	private: System::Windows::Forms::Timer^ timer1;
+	private: System::ComponentModel::IContainer^ components;
+
+#pragma region Windows Form Designer generated code
+		   void InitializeComponent(void)
+		   {
+			   this->components = (gcnew System::ComponentModel::Container());
+			   this->panelPregunta = (gcnew System::Windows::Forms::Panel());
+			   this->btnOpcionB = (gcnew System::Windows::Forms::Button());
+			   this->btnOpcionA = (gcnew System::Windows::Forms::Button());
+			   this->lblPregunta = (gcnew System::Windows::Forms::Label());
+			   this->panelFinal = (gcnew System::Windows::Forms::Panel());
+			   this->lblVictoriaSub = (gcnew System::Windows::Forms::Label());
+			   this->lblVictoriaTitulo = (gcnew System::Windows::Forms::Label());
+			   this->timer1 = (gcnew System::Windows::Forms::Timer(this->components));
+			   this->panelPregunta->SuspendLayout();
+			   this->panelFinal->SuspendLayout();
+			   this->SuspendLayout();
+			   // 
+			   // panelPregunta
+			   // 
+			   this->panelPregunta->BackColor = System::Drawing::Color::Transparent;
+			   this->panelPregunta->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
+			   this->panelPregunta->Controls->Add(this->btnOpcionB);
+			   this->panelPregunta->Controls->Add(this->btnOpcionA);
+			   this->panelPregunta->Controls->Add(this->lblPregunta);
+			   this->panelPregunta->Location = System::Drawing::Point(25, 538);
+			   this->panelPregunta->Name = L"panelPregunta";
+			   this->panelPregunta->Size = System::Drawing::Size(750, 250);
+			   this->panelPregunta->TabIndex = 0;
+			   this->panelPregunta->Visible = false;
+			   // 
+			   // btnOpcionB
+			   // 
+			   this->btnOpcionB->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(30)),
+				   static_cast<System::Int32>(static_cast<System::Byte>(30)));
+			   this->btnOpcionB->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			   this->btnOpcionB->Font = (gcnew System::Drawing::Font(L"Consolas", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->btnOpcionB->ForeColor = System::Drawing::Color::NavajoWhite;
+			   this->btnOpcionB->Location = System::Drawing::Point(30, 180);
+			   this->btnOpcionB->Name = L"btnOpcionB";
+			   this->btnOpcionB->Size = System::Drawing::Size(400, 45);
+			   this->btnOpcionB->TabIndex = 2;
+			   this->btnOpcionB->Text = L"Opción B";
+			   this->btnOpcionB->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			   this->btnOpcionB->UseVisualStyleBackColor = false;
+			   this->btnOpcionB->Click += gcnew System::EventHandler(this, &Nivel2::btnRespuesta_Click);
+			   // 
+			   // btnOpcionA
+			   // 
+			   this->btnOpcionA->BackColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(40)), static_cast<System::Int32>(static_cast<System::Byte>(30)),
+				   static_cast<System::Int32>(static_cast<System::Byte>(30)));
+			   this->btnOpcionA->FlatStyle = System::Windows::Forms::FlatStyle::Flat;
+			   this->btnOpcionA->Font = (gcnew System::Drawing::Font(L"Consolas", 11.25F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->btnOpcionA->ForeColor = System::Drawing::Color::NavajoWhite;
+			   this->btnOpcionA->Location = System::Drawing::Point(30, 125);
+			   this->btnOpcionA->Name = L"btnOpcionA";
+			   this->btnOpcionA->Size = System::Drawing::Size(400, 45);
+			   this->btnOpcionA->TabIndex = 1;
+			   this->btnOpcionA->Text = L"Opción A";
+			   this->btnOpcionA->TextAlign = System::Drawing::ContentAlignment::MiddleLeft;
+			   this->btnOpcionA->UseVisualStyleBackColor = false;
+			   this->btnOpcionA->Click += gcnew System::EventHandler(this, &Nivel2::btnRespuesta_Click);
+			   // 
+			   // lblPregunta
+			   // 
+			   this->lblPregunta->BackColor = System::Drawing::Color::Transparent;
+			   this->lblPregunta->Font = (gcnew System::Drawing::Font(L"Consolas", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblPregunta->ForeColor = System::Drawing::Color::White;
+			   this->lblPregunta->Location = System::Drawing::Point(30, 25);
+			   this->lblPregunta->Name = L"lblPregunta";
+			   this->lblPregunta->Size = System::Drawing::Size(450, 90);
+			   this->lblPregunta->TabIndex = 0;
+			   this->lblPregunta->Text = L"Pregunta...";
+			   // 
+			   // panelFinal
+			   // 
+			   this->panelFinal->BackgroundImageLayout = System::Windows::Forms::ImageLayout::Stretch;
+			   this->panelFinal->Controls->Add(this->lblVictoriaSub);
+			   this->panelFinal->Controls->Add(this->lblVictoriaTitulo);
+			   this->panelFinal->Location = System::Drawing::Point(0, 0);
+			   this->panelFinal->Name = L"panelFinal";
+			   this->panelFinal->Size = System::Drawing::Size(800, 800);
+			   this->panelFinal->TabIndex = 1;
+			   this->panelFinal->Visible = false;
+			   this->panelFinal->Click += gcnew System::EventHandler(this, &Nivel2::panelFinal_Click);
+			   // 
+			   // lblVictoriaSub
+			   // 
+			   this->lblVictoriaSub->BackColor = System::Drawing::Color::Transparent;
+			   this->lblVictoriaSub->Font = (gcnew System::Drawing::Font(L"Consolas", 15.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblVictoriaSub->ForeColor = System::Drawing::Color::White;
+			   this->lblVictoriaSub->Location = System::Drawing::Point(0, 400);
+			   this->lblVictoriaSub->Name = L"lblVictoriaSub";
+			   this->lblVictoriaSub->Size = System::Drawing::Size(800, 50);
+			   this->lblVictoriaSub->TabIndex = 1;
+			   this->lblVictoriaSub->Text = L"Has superado el Acto 2...";
+			   this->lblVictoriaSub->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			   // 
+			   // lblVictoriaTitulo
+			   // 
+			   this->lblVictoriaTitulo->BackColor = System::Drawing::Color::Transparent;
+			   this->lblVictoriaTitulo->Font = (gcnew System::Drawing::Font(L"Consolas", 48, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				   static_cast<System::Byte>(0)));
+			   this->lblVictoriaTitulo->ForeColor = System::Drawing::Color::Gold;
+			   this->lblVictoriaTitulo->Location = System::Drawing::Point(0, 300);
+			   this->lblVictoriaTitulo->Name = L"lblVictoriaTitulo";
+			   this->lblVictoriaTitulo->Size = System::Drawing::Size(800, 100);
+			   this->lblVictoriaTitulo->TabIndex = 0;
+			   this->lblVictoriaTitulo->Text = L"ACTO II SUPERADO";
+			   this->lblVictoriaTitulo->TextAlign = System::Drawing::ContentAlignment::MiddleCenter;
+			   // 
+			   // timer1
+			   // 
+			   this->timer1->Enabled = true;
+			   this->timer1->Interval = 30;
+			   this->timer1->Tick += gcnew System::EventHandler(this, &Nivel2::timer1_Tick);
+			   // 
+			   // Nivel2
+			   // 
+			   this->AutoScaleDimensions = System::Drawing::SizeF(6, 13);
+			   this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			   this->ClientSize = System::Drawing::Size(800, 800);
+			   this->Controls->Add(this->panelFinal);
+			   this->Controls->Add(this->panelPregunta);
+			   this->DoubleBuffered = true;
+			   this->Name = L"Nivel2";
+			   this->Text = L"Acto II: La Luz del Pensamiento";
+			   this->KeyDown += gcnew System::Windows::Forms::KeyEventHandler(this, &Nivel2::Nivel2_KeyDown);
+			   this->KeyUp += gcnew System::Windows::Forms::KeyEventHandler(this, &Nivel2::Nivel2_KeyUp);
+			   this->MouseMove += gcnew System::Windows::Forms::MouseEventHandler(this, &Nivel2::Nivel2_MouseMove);
+			   this->panelPregunta->ResumeLayout(false);
+			   this->panelFinal->ResumeLayout(false);
+			   this->ResumeLayout(false);
+
+		   }
+#pragma endregion
+
+	private: System::Void timer1_Tick(System::Object^ sender, System::EventArgs^ e) {
+		Graphics^ g = this->CreateGraphics();
+		BufferedGraphicsContext^ espacio = BufferedGraphicsManager::Current;
+		BufferedGraphics^ buffer = espacio->Allocate(g, this->ClientRectangle);
+
+		
+		if (enIntro) {
+			contadorIntro++;
+			if (contadorIntro > 160) {
+				enIntro = false;
+				panelFinal->Visible = false;
+				
+				EmpezarNarrativa();
+			}
+		}
+		
+		else if (panelPregunta->Visible == false && panelFinal->Visible == false) {
+
+			juego->MoverTodo(w, s, a, d);
+
+			int resultado = juego->VerificarColisiones();
+
+			
+			if (resultado > 0) {
+				idLibroActual = resultado;
+				MostrarPregunta(resultado);
+			}
+
+			// Verificar Victoria
+			if (juego->NivelCompletado()) {
+				timer1->Enabled = false;
+				esVictoria = true;
+				try { panelFinal->BackgroundImage = System::Drawing::Image::FromFile("imagenes/ganaste_2.png"); }
+				catch (...) {}
+				lblVictoriaTitulo->Text = "ACTO II SUPERADO";
+				lblVictoriaSub->Text = "Reuniste informacion has superado el Acto 2...";
+				panelFinal->Visible = true;
+				panelFinal->BringToFront();
+			}
+		}
+
+		juego->DibujarTodo(buffer->Graphics);
+		buffer->Render(g);
+		delete buffer; delete espacio; delete g;
+	}
+
+		   
+		   void EmpezarNarrativa() {
+			   enNarrativa = true;
+			   pasoNarrativa = 0;
+			   MostrarDialogoNarrativo();
+		   }
+
+		   void MostrarDialogoNarrativo() {
+			   panelPregunta->Visible = true;
+			   panelPregunta->BringToFront();
+			   w = s = a = d = false; 
+
+			  
+			   btnOpcionA->Visible = false;
+			   btnOpcionB->Visible = true;
+			   btnOpcionB->Text = "Continuar >>";
+
+			   
+			   switch (pasoNarrativa) {
+			   case 0:
+				   lblPregunta->Text = "ELARA: Estas ruinas... La Gran Biblioteca.\nDicen que aquí la humanidad guardaba sus sueños antes de la Gran Optimización.";
+				   break;
+			   case 1:
+				   lblPregunta->Text = "ELARA: El Supervisor dice que la historia es 'ineficiente'.\nDatos corruptos que deben borrarse.";
+				   break;
+			   case 2:
+				   lblPregunta->Text = "ELARA: Pero yo siento algo más... Debo encontrar información. Solo recordando quiénes fuimos podremos salvarnos.\nLa Maquina Suprema nos Oculta algo, talves aqui encuentre respuestas...";
+				   break;
+			  
+			   }
+		   }
+
+		   void MostrarPregunta(int id) {
+			   panelPregunta->Visible = true;
+			   panelPregunta->BringToFront();
+			   w = s = a = d = false;
+
+			   
+			   btnOpcionA->Visible = true;
+			   btnOpcionB->Visible = true;
+
+			  
+			   switch (id) {
+			   case 1:
+				   lblPregunta->Text = "¿Qué diferencia a un humano de una IA?";
+				   btnOpcionA->Text = "A) La capacidad de procesar datos rápido.";
+				   btnOpcionB->Text = "B) La capacidad de dudar y sentir.";
+				   break;
+			   case 2:
+				   lblPregunta->Text = "Si una IA comete un error, ¿de quién es la culpa?";
+				   btnOpcionA->Text = "A) De los datos o del humano.";
+				   btnOpcionB->Text = "B) La IA decidió mal intencionalmente.";
+				   break;
+			   case 3:
+				   lblPregunta->Text = "¿Es malo cometer errores?";
+				   btnOpcionA->Text = "A) Sí, reduce la eficiencia del sistema.";
+				   btnOpcionB->Text = "B) No, es esencial para aprender.";
+				   break;
+			   case 4:
+				   lblPregunta->Text = "¿Puede una IA tener creatividad real?";
+				   btnOpcionA->Text = "A) Solo imita patrones existentes.";
+				   btnOpcionB->Text = "B) Sí, puede inventar cosas de la nada.";
+				   break;
+			   case 5:
+				   lblPregunta->Text = "ELARA: He reunido todo. ¿Cuál es mi conclusión?";
+				   btnOpcionA->Text = "A) La IA debe ser destruida por seguridad.";
+				   btnOpcionB->Text = "B) La IA y la Humanidad se necesitan.";
+				   break;
+			   }
+		   }
+
+	private: System::Void btnRespuesta_Click(System::Object^ sender, System::EventArgs^ e) {
+
+		
+		if (enNarrativa) {
+			pasoNarrativa++;
+			if (pasoNarrativa > 2) {
+				
+				enNarrativa = false;
+				panelPregunta->Visible = false;
+				this->Focus();
+			}
+			else {
+				
+				MostrarDialogoNarrativo();
+			}
+			return; 
+		}
+
+		
+		juego->RecogerFragmento(idLibroActual);
+		panelPregunta->Visible = false;
+		this->Focus();
+	}
+
+		   
+	private: System::Void panelFinal_Click(System::Object^ sender, System::EventArgs^ e) {
+		if (enIntro) return; 
+
+		if (esVictoria) {
+			this->Close(); 
+		}
+	}
+
+		  
+	private: System::Void Nivel2_MouseMove(System::Object^ sender, System::Windows::Forms::MouseEventArgs^ e) {
+		mousePos = e->Location;
+	}
+	private: System::Void Nivel2_KeyDown(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyCode == Keys::W) w = true;
+		if (e->KeyCode == Keys::S) s = true;
+		if (e->KeyCode == Keys::A) a = true;
+		if (e->KeyCode == Keys::D) d = true;
+	}
+	private: System::Void Nivel2_KeyUp(System::Object^ sender, System::Windows::Forms::KeyEventArgs^ e) {
+		if (e->KeyCode == Keys::W) w = false;
+		if (e->KeyCode == Keys::S) s = false;
+		if (e->KeyCode == Keys::A) a = false;
+		if (e->KeyCode == Keys::D) d = false;
+	}
+	};
+}
+
+Termninal.h:
+
+#pragma once
+#include "Entidad.h"
+
+namespace TFAlgoritmos {
+    public ref class Terminal : public Entidad {
+    public:
+        int id;
+        bool activa;
+
+        Terminal(int x, int y, int id) : Entidad(x, y, "imagenes/terminal.png") {
+            this->id = id;
+            this->activa = true;
+
+            
+            ancho = imagen->Width / 2;
+            alto = imagen->Height;
+
+            indiceX = 0; // Rojo
+            indiceY = 0;
+        }
+
+        void Desactivar() {
+            activa = false;
+            indiceX = 1; 
+        }
+
+        
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
+            Rectangle destino = Rectangle(x - camX, y - camY, ancho, alto);
+
+            g->InterpolationMode = System::Drawing::Drawing2D::InterpolationMode::NearestNeighbor;
+            g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
+        }
+    };
+}
+
+MyForm.cpp
+
+#include "MenuForm.h" 
+#include "MyForm.h"
+
+using namespace System;
+using namespace System::Windows::Forms;
+
+void main()
+{
+	
+	Application::Run(gcnew TFAlgoritmos::MenuForm());
+}
+

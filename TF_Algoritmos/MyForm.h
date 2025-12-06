@@ -1,6 +1,6 @@
 #pragma once
 #include "Controladora.h"
-
+#include "Nivel2.h"
 namespace TFAlgoritmos {
 
 	using namespace System;
@@ -270,8 +270,14 @@ namespace TFAlgoritmos {
 		if (idActualInteraccion == 999) {
 			timer1->Enabled = false;
 			MessageBox::Show("ACTO I COMPLETADO\nKael escapa del laboratorio.");
-			this->Close();
+			this->Hide();                 
+
+			Nivel2^ nivel2 = gcnew Nivel2(); 
+			nivel2->ShowDialog();           
+
+			this->Close();               
 			return;
+		
 		}
 		panelDialogo->Visible = false;
 		this->Focus();

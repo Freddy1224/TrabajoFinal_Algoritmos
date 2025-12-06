@@ -1,7 +1,8 @@
 #pragma once
 #include "Escenario2.h"
 #include "Elara.h"
-#include "Sombra.h"      
+#include "Sombra.h"
+#include "Fragmento.h" 
 #include <vector>
 
 using namespace System;
@@ -15,93 +16,153 @@ namespace TFAlgoritmos {
         Elara^ elara;
         List<Rectangle>^ obstaculos;
         List<Sombra^>^ sombras;
+        List<Fragmento^>^ fragmentos;
+        int fragmentosRecogidos;
+
+        
+        int camX, camY;
 
     public:
         ControladoraNivel2() {
             escenario = gcnew Escenario2();
-            
-            elara = gcnew Elara(100, 400);
-
+            elara = gcnew Elara(420, 1410);
             obstaculos = gcnew List<Rectangle>();
             sombras = gcnew List<Sombra^>();
+            fragmentos = gcnew List<Fragmento^>(); 
+            fragmentosRecogidos = 0;
 
             
-            obstaculos->Add(Rectangle(400, 480, 350, 60));
-            obstaculos->Add(Rectangle(0, 0, 800, 60));
-            obstaculos->Add(Rectangle(0, 0, 25, 800));
-            obstaculos->Add(Rectangle(777, 23, 50, 800));
-            obstaculos->Add(Rectangle(0, 750, 800, 50));
-            obstaculos->Add(Rectangle(30, 40, 200, 60));
-            obstaculos->Add(Rectangle(25, 300, 25, 240));
-            obstaculos->Add(Rectangle(175, 15, 165, 155));
-            obstaculos->Add(Rectangle(290, 15, 165, 110));
-            obstaculos->Add(Rectangle(458, 50, 12, 150));
-            obstaculos->Add(Rectangle(480, 50, 350, 60));
-            obstaculos->Add(Rectangle(754, 205, 23, 80));
-            obstaculos->Add(Rectangle(554, 244, 77, 40));
-            obstaculos->Add(Rectangle(554, 620, 100, 35));
-            obstaculos->Add(Rectangle(25, 620, 125, 180));
-            obstaculos->Add(Rectangle(300, 620, 150, 170));
-            obstaculos->Add(Rectangle(394, 300, 400, 210));
-            obstaculos->Add(Rectangle(394, 270, 75, 50));
-            obstaculos->Add(Rectangle(200, 290, 200, 240));
-            obstaculos->Add(Rectangle(750, 550, 23, 200));
+            obstaculos->Add(Rectangle(0, 0, 1600, 100));    // Techo
+            obstaculos->Add(Rectangle(0, 1500, 1600, 100)); // Suelo
+            obstaculos->Add(Rectangle(0, 0, 61, 254));    // Izquierda
+            obstaculos->Add(Rectangle(0, 468, 61, 940));
 
+            obstaculos->Add(Rectangle(1500, 0, 100, 1600)); // Derecha
+            obstaculos->Add(Rectangle(0, 1500, 1600, 100));
+            obstaculos->Add(Rectangle(60, 100, 400, 145));
+            obstaculos->Add(Rectangle(62, 572, 50, 550));
+
+            obstaculos->Add(Rectangle(321, 30, 380, 350));
+            obstaculos->Add(Rectangle(580, 30, 330, 220));
+            obstaculos->Add(Rectangle(916, 100, 24, 300));
+            obstaculos->Add(Rectangle(960, 100, 700, 120));
+            obstaculos->Add(Rectangle(1508, 410, 46, 160));
+            obstaculos->Add(Rectangle(1108, 488, 154, 80));
+            obstaculos->Add(Rectangle(1108, 1240, 200, 70));
+            obstaculos->Add(Rectangle(50, 1240, 266, 166));
+            obstaculos->Add(Rectangle(832, 1241, 60, 266));
+            obstaculos->Add(Rectangle(579, 1242, 314, 165));
+            obstaculos->Add(Rectangle(788, 600, 800, 420));
+            obstaculos->Add(Rectangle(788, 540, 150, 100));
+            obstaculos->Add(Rectangle(385, 572, 400, 510));
+            obstaculos->Add(Rectangle(1500, 1100, 46, 400));
+
+            //SOMBRAs
+            sombras->Add(gcnew Sombra(210, 1010));
+            sombras->Add(gcnew Sombra(1200, 1140));
+            sombras->Add(gcnew Sombra(400, 500));
+            sombras->Add(gcnew Sombra(940, 300));
+            sombras->Add(gcnew Sombra(666, 1400));
+            sombras->Add(gcnew Sombra(300, 1200));
+
+            //libros
             
-            sombras->Add(gcnew Sombra(300, 200));
-            sombras->Add(gcnew Sombra(600, 590));
-            sombras->Add(gcnew Sombra(150, 600));
+            fragmentos->Add(gcnew Fragmento(1400, 200, 1));  
+            fragmentos->Add(gcnew Fragmento(200, 1400, 2));  
+            fragmentos->Add(gcnew Fragmento(775, 293, 3));   
+            fragmentos->Add(gcnew Fragmento(1400, 1400, 4)); 
+            fragmentos->Add(gcnew Fragmento(200, 200, 5));   
         }
 
         void MoverTodo(bool w, bool s, bool a, bool d) {
             escenario->Animar();
-
-           
-            elara->Mover(w, s, a, d, 800, 800, obstaculos);
+            elara->Mover(w, s, a, d, 1600, 1600, obstaculos);
 
             
+            camX = elara->GetX() - 400 + (elara->GetRectangulo().Width / 2);
+            camY = elara->GetY() - 400 + (elara->GetRectangulo().Height / 2);
+            if (camX < 0) camX = 0; if (camY < 0) camY = 0;
+            if (camX > 1600 - 800) camX = 800; if (camY > 1600 - 800) camY = 800;
+
+            // Mover Sombras
             for (int i = 0; i < sombras->Count; i++) {
-                sombras[i]->Perseguir(elara->GetX(), elara->GetY(), obstaculos);
+                sombras[i]->Perseguir(elara->GetX(), elara->GetY(), obstaculos, elara->GetHitbox());
             }
 
             
+            for (int i = 0; i < fragmentos->Count; i++) {
+                if (fragmentos[i]->activo) {
+                    fragmentos[i]->Animar();
+                }
+            }
+
             VerificarColisiones();
         }
 
         
-        void VerificarColisiones() {
-            Rectangle rElara = elara->GetRectangulo();
+        int VerificarColisiones() {
+            Rectangle rElara = elara->GetHitbox();
 
+            
             for (int i = 0; i < sombras->Count; i++) {
-                // Si el rectángulo de Elara toca alguna sombra...
-                if (rElara.IntersectsWith(sombras[i]->GetRectangulo())) {
+                if (rElara.IntersectsWith(sombras[i]->GetHitbox())) {
+                    elara = gcnew Elara(420, 1410);
+                    return -1; 
+                }
+            }
 
-                    
-                    elara = gcnew Elara(100, 400);
+            
+            for (int i = 0; i < fragmentos->Count; i++) {
+                if (fragmentos[i]->activo) {
+                    if (rElara.IntersectsWith(fragmentos[i]->GetRectangulo())) {
+                        
+                        return fragmentos[i]->id;
+                    }
+                }
+            }
 
-                    
-                  
+            return 0;
+        }
+
+        
+        void RecogerFragmento(int id) {
+            for (int i = 0; i < fragmentos->Count; i++) {
+                if (fragmentos[i]->id == id) {
+                    fragmentos[i]->Desactivar();
+                    fragmentosRecogidos++;
                     break;
                 }
             }
         }
 
-        void DibujarTodo(Graphics^ g) {
-            escenario->Dibujar(g);
-
-            for (int i = 0; i < sombras->Count; i++) {
-                sombras[i]->Dibujar(g);
-            }
-
-            elara->Dibujar(g);
-
-            // DEBUG Paredes (Actívalo si necesitas verlas de nuevo)
-            /*
-            Pen^ p = gcnew Pen(Color::Red, 2);
-            for(int i=0; i<obstaculos->Count; i++) {
-                g->DrawRectangle(p, obstaculos[i]);
-            }
-            */
+        bool NivelCompletado() {
+            return fragmentosRecogidos >= 5;
         }
+
+        void DibujarTodo(Graphics^ g) {
+            escenario->Dibujar(g, camX, camY);
+
+            // Dibujar libros
+            for (int i = 0; i < fragmentos->Count; i++) {
+                fragmentos[i]->Dibujar(g, camX, camY);
+            }
+
+            // Dibujar Sombras
+            for (int i = 0; i < sombras->Count; i++) {
+                sombras[i]->Dibujar(g, camX, camY);
+            }
+
+            elara->Dibujar(g, camX, camY);
+            Pen^ p = gcnew Pen(Color::Red, 2);
+            for (int i = 0; i < obstaculos->Count; i++) {
+                // para dibujar las paredes correctamente, restamos la camara
+                Rectangle r = obstaculos[i];
+                r.X -= camX;
+                r.Y -= camY;
+                g->DrawRectangle(p, r);
+            }
+        }
+        int GetCamX() { return camX; }
+        int GetCamY() { return camY; }
     };
 }

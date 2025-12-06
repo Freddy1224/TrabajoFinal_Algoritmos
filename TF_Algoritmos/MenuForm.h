@@ -164,7 +164,7 @@ namespace TFAlgoritmos {
 			// 
 			this->txtNombre->Font = (gcnew System::Drawing::Font(L"MS Gothic", 14.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
 				static_cast<System::Byte>(0)));
-			this->txtNombre->ForeColor = System::Drawing::SystemColors::Window;
+			this->txtNombre->ForeColor = System::Drawing::SystemColors::MenuText;
 			this->txtNombre->Location = System::Drawing::Point(50, 80);
 			this->txtNombre->Name = L"txtNombre";
 			this->txtNombre->Size = System::Drawing::Size(300, 26);
@@ -234,7 +234,7 @@ namespace TFAlgoritmos {
 	}
 
 	private: System::Void btnCreditos_Click(System::Object^ sender, System::EventArgs^ e) {
-		MessageBox::Show("CRÉDITOS:\n\nDesarrollado por:\n- Tu Nombre\n- Nombre compañero 1\n- Nombre compañero 2\n\nUPC - Algoritmos 2025", "Créditos");
+		MessageBox::Show("CRÉDITOS:\n\nDesarrollado por:\n- EnriqueArturoFloresMendoza (U202517492)\n- Rafael David Prudencio Angeles (U202517492)\n- Gonzalo Fabian Gutierrez Macazana (U202517383)\n\nUPC - Algoritmos 2025", "Créditos");
 	}
 
 	private: System::Void btnSalir_Click(System::Object^ sender, System::EventArgs^ e) {

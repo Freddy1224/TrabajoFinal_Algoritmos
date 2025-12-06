@@ -4,8 +4,8 @@
 namespace TFAlgoritmos {
     public ref class Terminal : public Entidad {
     public:
-        int id;       // iD del dialogo (1 al 5)
-        bool activa;  // true = Roja (pendiente), false = Verde (hackeada)
+        int id;
+        bool activa;
 
         Terminal(int x, int y, int id) : Entidad(x, y, "imagenes/terminal.png") {
             this->id = id;
@@ -15,7 +15,7 @@ namespace TFAlgoritmos {
             ancho = imagen->Width / 2;
             alto = imagen->Height;
 
-            indiceX = 0; // 0 = Rojo
+            indiceX = 0; // Rojo
             indiceY = 0;
         }
 
@@ -25,9 +25,11 @@ namespace TFAlgoritmos {
         }
 
         
-        void Dibujar(Graphics^ g) override {
+        void Dibujar(Graphics^ g, int camX, int camY) override {
             Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
-            Rectangle destino = Rectangle(x, y, ancho, alto);
+            Rectangle destino = Rectangle(x - camX, y - camY, ancho, alto);
+
+            g->InterpolationMode = System::Drawing::Drawing2D::InterpolationMode::NearestNeighbor;
             g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
         }
     };

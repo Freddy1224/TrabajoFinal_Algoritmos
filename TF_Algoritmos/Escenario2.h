@@ -8,15 +8,15 @@ namespace TFAlgoritmos {
 
     public:
         Escenario2() : Entidad(0, 0, "imagenes/fondo_biblio.png") {
-            ancho = 800;
-            alto = 800;
+            
+            ancho = 1600;
+            alto = 1600;
             contadorTiempo = 0;
         }
 
         void Animar() {
             contadorTiempo++;
-            // Animacion del fondo 
-            if (contadorTiempo > 100) {
+            if (contadorTiempo > 20) {
                 indiceX++;
                 if (indiceX > 1) {
                     indiceX = 0;
@@ -27,9 +27,14 @@ namespace TFAlgoritmos {
             }
         }
 
-        void Dibujar(Graphics^ g) override {
-            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
-            Rectangle destino = Rectangle(0, 0, ancho, alto);
+        
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            int srcX = (indiceX * 1600) + camX;
+            int srcY = (indiceY * 1600) + camY;
+
+            Rectangle porcion = Rectangle(srcX, srcY, 800, 800);
+            Rectangle destino = Rectangle(0, 0, 800, 800);
+
             g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
         }
     };

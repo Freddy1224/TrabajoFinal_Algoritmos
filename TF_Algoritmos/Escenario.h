@@ -4,35 +4,41 @@
 namespace TFAlgoritmos {
     public ref class Escenario : public Entidad {
     private:
-        int contadorTiempo; // velocidad de animación del fondo
+        int contadorTiempo;
 
     public:
+       
         Escenario() : Entidad(0, 0, "imagenes/fondo_lab.png") {
-            ancho = 800; // tamaño de la ventana del juego
-            alto = 800;
+            
+            ancho = 1600;
+            alto = 1600;
             contadorTiempo = 0;
         }
 
         void Animar() {
             contadorTiempo++;
-            // frame cada 10 ciclos para que no parpadee muy rapido
-            if (contadorTiempo > 10) {
+            // Velocidad de parpadeo de luces
+            if (contadorTiempo > 20) {
                 indiceX++;
-                if (indiceX > 1) { 
+                if (indiceX > 1) {
                     indiceX = 0;
                     indiceY++;
-                    if (indiceY > 1) { 
-                        indiceY = 0;
-                    }
+                    if (indiceY > 1) indiceY = 0;
                 }
                 contadorTiempo = 0;
             }
         }
 
-        
-        void Dibujar(Graphics^ g) override {
-            Rectangle porcion = Rectangle(indiceX * ancho, indiceY * alto, ancho, alto);
-            Rectangle destino = Rectangle(0, 0, ancho, alto);
+        // DIBUJAR CON CÁMARA
+        void Dibujar(Graphics^ g, int camX, int camY) override {
+            // Calculamos el recorte en la imagen gigante
+            int srcX = (indiceX * 1600) + camX;
+            int srcY = (indiceY * 1600) + camY;
+
+            // Recortamos solo lo que ve la cámara (800x800)
+            Rectangle porcion = Rectangle(srcX, srcY, 800, 800);
+            Rectangle destino = Rectangle(0, 0, 800, 800);
+
             g->DrawImage(imagen, destino, porcion, GraphicsUnit::Pixel);
         }
     };
