@@ -147,7 +147,7 @@ namespace TFAlgoritmos {
 		if (panelDialogo->Visible == false) {
 			juego->MoverTodo(w, s, a, d);
 
-			int id = juego->VerificarColision();
+			int id = juego->VerificarColisionNivel1();
 			if (id > 0) {
 				idActualInteraccion = id;
 				MostrarDialogoTerminal(id);

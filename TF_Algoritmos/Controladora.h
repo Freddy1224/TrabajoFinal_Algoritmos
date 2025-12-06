@@ -75,7 +75,7 @@ namespace TFAlgoritmos {
          
         }
 
-        int VerificarColision() {
+        int VerificarColisionNivel1() {
             for (int i = 0; i < terminales->Count; i++) {
                 if (terminales[i]->activa) {
                     if (kael->GetRectangulo().IntersectsWith(terminales[i]->GetRectangulo())) {
